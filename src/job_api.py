@@ -1,11 +1,20 @@
-from apify_client import ApifyClient
-from dotenv import load_dotenv
-import os
 import re
- 
-load_dotenv()
 
-apify_client = ApifyClient(os.getenv("APIFY_API_TOKEN"))
+from apify_client import ApifyClient
+
+from src.env import get_api_key
+
+_apify_client = None
+
+
+def _get_apify_client():
+    global _apify_client
+    if _apify_client is None:
+        token = get_api_key("APIFY_API_TOKEN")
+        if not token:
+            raise RuntimeError("APIFY_API_TOKEN is not set")
+        _apify_client = ApifyClient(token)
+    return _apify_client
 
 # Fetch LinkedIn jobs based on search query and location
 # Added 'internship' parameter to filter for internships
@@ -20,8 +29,9 @@ def fetch_linkedin_jobs(search_query, location = "Bangalore", rows=60, internshi
             "apifyProxyGroups": ["RESIDENTIAL"],
         }
     }
-    run = apify_client.actor("BHzefUZlZRKWxkTck").call(run_input=run_input)
-    jobs = list(apify_client.dataset(run["defaultDatasetId"]).iterate_items())
+    client = _get_apify_client()
+    run = client.actor("BHzefUZlZRKWxkTck").call(run_input=run_input)
+    jobs = list(client.dataset(run["defaultDatasetId"]).iterate_items())
     # Filter for internships if requested
     if internship:
         jobs = [job for job in jobs if (
@@ -45,8 +55,9 @@ def fetch_naukri_jobs(search_query, location = "Bangalore", rows=60, internship=
         "sortBy": "relevance",
         "experience": "0",
     }
-    run = apify_client.actor("alpcnRV9YI9lYVPWk").call(run_input=run_input)
-    jobs = list(apify_client.dataset(run["defaultDatasetId"]).iterate_items())
+    client = _get_apify_client()
+    run = client.actor("alpcnRV9YI9lYVPWk").call(run_input=run_input)
+    jobs = list(client.dataset(run["defaultDatasetId"]).iterate_items())
     # Filter for internships if requested
     if internship:
         jobs = [job for job in jobs if (

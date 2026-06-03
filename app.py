@@ -1,26 +1,13 @@
 import os
 
 import streamlit as st
-from dotenv import load_dotenv
 
+from src.env import get_api_key, load_api_keys
 
-def _init_env():
-    """Load API keys from Streamlit Cloud secrets or local .env."""
-    try:
-        if "GOOGLE_API_KEY" in st.secrets:
-            os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-        if "APIFY_API_TOKEN" in st.secrets:
-            os.environ["APIFY_API_TOKEN"] = st.secrets["APIFY_API_TOKEN"]
-    except Exception:
-        pass
-    load_dotenv()
-
-
-_init_env()
+load_api_keys()
 
 from src.helper import extract_text_from_pdf, ask_genai
 from src.job_api import fetch_linkedin_jobs, fetch_naukri_jobs
-
 
 
 st.set_page_config(
@@ -31,7 +18,7 @@ st.set_page_config(
 st.title("📄 AI Job Recommender")
 st.markdown("Upload your resume and get job recommendations based on your skills and experience from LinkedIn and Naukri.")
 
-if not os.getenv("GOOGLE_API_KEY") or not os.getenv("APIFY_API_TOKEN"):
+if not get_api_key("GOOGLE_API_KEY") or not get_api_key("APIFY_API_TOKEN"):
     st.error(
         "API keys are not configured. For local runs, add `GOOGLE_API_KEY` and "
         "`APIFY_API_TOKEN` to a `.env` file. On Streamlit Cloud, add them under "

@@ -37,7 +37,13 @@ GOOGLE_API_KEY = "your-google-api-key"
 APIFY_API_TOKEN = "your-apify-token"
 ```
 
-Save and **Reboot app** if it was already running.
+Important:
+
+- Keys must be **top-level** (not nested under `[sections]`).
+- Use **quotes** around values in TOML.
+- Do not use `.env` syntax (`KEY=value` without quotes) in the Secrets box.
+
+Save and **Reboot app** if it was already running. If keys are missing, the app shows a configuration error instead of crashing.
 
 ## Step 4 — Share on your portfolio
 
