@@ -6,7 +6,7 @@ from src.env import get_api_key, load_api_keys
 
 load_api_keys()
 
-from src.helper import extract_text_from_pdf, ask_genai
+from src.helper import analyze_resume, extract_text_from_pdf
 from src.job_api import fetch_linkedin_jobs, fetch_naukri_jobs
 
 
@@ -16,7 +16,10 @@ st.set_page_config(
     layout="wide",
 )
 st.title("📄 AI Job Recommender")
-st.markdown("Upload your resume and get job recommendations based on your skills and experience from LinkedIn and Naukri.")
+st.markdown(
+    "Upload your resume and get job recommendations based on your skills and experience "
+    "from LinkedIn and Naukri."
+)
 
 if not get_api_key("GOOGLE_API_KEY") or not get_api_key("APIFY_API_TOKEN"):
     st.error(
@@ -29,67 +32,72 @@ if not get_api_key("GOOGLE_API_KEY") or not get_api_key("APIFY_API_TOKEN"):
 uploaded_file = st.file_uploader("Upload your resume", type=["pdf"])
 
 if uploaded_file:
+    file_key = f"{uploaded_file.name}:{uploaded_file.size}"
+
     try:
-        with st.spinner("Extracting text from your resume..."):
-            resume_text = extract_text_from_pdf(uploaded_file)
-            if not resume_text.strip():
-                st.error("Could not read text from this PDF. Try another file or a text-based PDF.")
-                st.stop()
+        if st.session_state.get("analysis_file") != file_key:
+            with st.spinner("Extracting text from your resume..."):
+                resume_text = extract_text_from_pdf(uploaded_file)
+                if not resume_text.strip():
+                    st.error("Could not read text from this PDF. Try another file or a text-based PDF.")
+                    st.stop()
 
-        with st.spinner("Summarizing your resume..."):
-            summary = ask_genai(
-                f"Summarize this resume highlighting the skills, education, and experience: \n\n{resume_text}",
-                max_tokens=500,
-            )
+            with st.spinner("Analyzing resume with AI (one API call)..."):
+                analysis = analyze_resume(resume_text)
 
-        with st.spinner("Finding skill Gaps..."):
-            gaps = ask_genai(
-                f"Analyze this resume and highlight missing skills, certification, and experiences needed for better job opportunities: \n\n{resume_text}",
-                max_tokens=500,
-            )
+            st.session_state["analysis_file"] = file_key
+            st.session_state["analysis"] = analysis
+        else:
+            analysis = st.session_state["analysis"]
 
-        with st.spinner("Creating Future Roadmap..."):
-            roadmap = ask_genai(
-                f"Based on this resume, suggest a future roadmap to improve this person's career prospects (Skill to learn, certification needed, industry exposure) \n\n{resume_text}",
-                max_tokens=500,
-            )
+        summary = analysis["summary"]
+        gaps = analysis["skill_gaps"]
+        roadmap = analysis["roadmap"]
+        job_keywords = analysis["job_keywords"]
+
     except RuntimeError as exc:
         st.error(str(exc))
+        if "429" in str(exc):
+            st.info(
+                "Tip: Free Gemini quota resets daily. For portfolio demos, wait a few minutes "
+                "between tests or enable billing on your Google AI project."
+            )
         st.stop()
 
     st.markdown("---")
     st.header("📑 Resume Summary")
-    st.markdown(f"<div style='background-color: #000000; padding: 15px; border-radius: 10px; font-size:16px; color:white;'>{summary}</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='background-color: #000000; padding: 15px; border-radius: 10px; font-size:16px; color:white;'>{summary}</div>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown("---")
     st.header("🛠️ Skill Gaps & Missing Areas")
-    st.markdown(f"<div style='background-color: #000000; padding: 15px; border-radius: 10px; font-size:16px; color:white;'>{gaps}</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='background-color: #000000; padding: 15px; border-radius: 10px; font-size:16px; color:white;'>{gaps}</div>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown("---")
     st.header("🚀 Future Roadmap & Preparation Strategy")
-    st.markdown(f"<div style='background-color: #000000; padding: 15px; border-radius: 10px; font-size:16px; color:white;'>{roadmap}</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='background-color: #000000; padding: 15px; border-radius: 10px; font-size:16px; color:white;'>{roadmap}</div>",
+        unsafe_allow_html=True,
+    )
 
     st.success("✅ Analysis Completed Successfully!")
 
     if st.button("🔎 Get Job Recomendations"):
+        search_keywords_clean = job_keywords.replace("\n", "").strip()
+        st.success(f"Job keywords: {search_keywords_clean}")
+
         try:
-            with st.spinner("Fetching job recommendations..."):
-                keywords = ask_genai(
-                    f"Based on this resume summary, suggest the best job titles and keywords for searching jobs: Give a comma-seperated list only, no explanation.\n\nSummary: {summary}",
-                    max_tokens=100,
-                )
-
-                search_keywords_clean = keywords.replace("\n", "").strip()
-
-            st.success(f"Extracted Job Keywords: {search_keywords_clean}")
-
-            with st.spinner("Fetching job from LinkedIn and Naukri..."):
-                linkedin_jobs = fetch_linkedin_jobs(search_keywords_clean, rows=60)
-                naukri_jobs = fetch_naukri_jobs(search_keywords_clean, rows=60)
+            with st.spinner("Fetching jobs from LinkedIn and Naukri..."):
+                linkedin_jobs = fetch_linkedin_jobs(search_keywords_clean, rows=30)
+                naukri_jobs = fetch_naukri_jobs(search_keywords_clean, rows=30)
         except RuntimeError as exc:
             st.error(str(exc))
             st.stop()
-
 
         st.markdown("---")
         st.header("💼 Top LinkedIn Jobs")
@@ -113,6 +121,4 @@ if uploaded_file:
                 st.markdown(f"- 🔗 [View Job]({job.get('url')})")
                 st.markdown("---")
         else:
-            st.warning("No Naukri jobs found.")    
-
-
+            st.warning("No Naukri jobs found.")

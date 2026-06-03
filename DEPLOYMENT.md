@@ -54,6 +54,17 @@ If resume upload fails with `google.genai.errors.ClientError`:
 3. Push the latest code (uses model `gemini-2.0-flash`, not the retired `gemini-2.0-flash-001`).
 4. Check **Manage app → Logs** for the full error code (e.g. `401` = invalid key, `429` = quota).
 
+### Error 429 (quota exceeded)
+
+The free Gemini tier has daily limits. This app is optimized to use **one API call per resume** (not three).
+
+If you still see 429:
+
+- Wait until quota resets (often next day, or ~1 minute for short rate limits).
+- Avoid re-uploading the same PDF repeatedly while testing.
+- Enable billing on your Google AI / Cloud project: [AI Studio](https://aistudio.google.com/).
+- Optional: set a lighter model in Streamlit secrets: `GEMINI_MODEL = "gemini-2.5-flash-lite"`
+
 ## Step 4 — Share on your portfolio
 
 Use the live URL in your resume/LinkedIn, e.g.:
