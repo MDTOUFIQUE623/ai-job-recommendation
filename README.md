@@ -139,6 +139,14 @@ AI Job system/
 
 ---
 
+## Deploy (Portfolio)
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for step-by-step instructions to publish on **Streamlit Community Cloud** (free, public URL for recruiters).
+
+Quick summary: push to GitHub → [share.streamlit.io](https://share.streamlit.io) → connect repo → main file `app.py` → add `GOOGLE_API_KEY` and `APIFY_API_TOKEN` in **Secrets**.
+
+---
+
 ## License
 
 MIT (or your preferred license)

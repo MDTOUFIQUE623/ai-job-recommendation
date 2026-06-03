@@ -56,7 +56,7 @@ def fetch_naukri_jobs(search_query, location = "Bangalore", rows=60, internship=
     # Ensure each job has a 'url' field with full link
     for job in jobs:
         if 'jdURL' in job:
-            job['url'] = {job['jdURL']}
+            job['url'] = job['jdURL']
     return jobs
 
  
