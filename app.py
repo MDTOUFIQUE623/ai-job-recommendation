@@ -91,12 +91,26 @@ if uploaded_file:
         search_keywords_clean = job_keywords.replace("\n", "").strip()
         st.success(f"Job keywords: {search_keywords_clean}")
 
-        try:
-            with st.spinner("Fetching jobs from LinkedIn and Naukri..."):
-                linkedin_jobs = fetch_linkedin_jobs(search_keywords_clean, rows=30)
-                naukri_jobs = fetch_naukri_jobs(search_keywords_clean, rows=30)
-        except RuntimeError as exc:
-            st.error(str(exc))
+        linkedin_jobs = []
+        naukri_jobs = []
+
+        with st.spinner("Fetching LinkedIn jobs (may take 1–2 min)..."):
+            try:
+                linkedin_jobs = fetch_linkedin_jobs(search_keywords_clean)
+            except RuntimeError as exc:
+                st.warning(str(exc))
+
+        with st.spinner("Fetching Naukri jobs (may take 1–2 min)..."):
+            try:
+                naukri_jobs = fetch_naukri_jobs(search_keywords_clean)
+            except RuntimeError as exc:
+                st.warning(str(exc))
+
+        if not linkedin_jobs and not naukri_jobs:
+            st.error(
+                "Could not fetch jobs from LinkedIn or Naukri. "
+                "Check Apify credits at https://console.apify.com/billing and your APIFY_API_TOKEN."
+            )
             st.stop()
 
         st.markdown("---")
