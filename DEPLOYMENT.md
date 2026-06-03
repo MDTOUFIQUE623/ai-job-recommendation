@@ -7,7 +7,7 @@ This app is a **Streamlit** project. The fastest free deployment for a portfolio
 1. **GitHub repo** — this project is already at:
    `https://github.com/MDTOUFIQUE623/ai-job-recommendation`
 2. **API keys** (keep private; never commit them):
-   - [Google AI Studio](https://aistudio.google.com/apikey) → `GOOGLE_API_KEY`
+   - [Google AI Studio](https://aistudio.google.com/apikey) → `GOOGLE_API_KEY` (prefer keys starting with `AIza`)
    - [Apify](https://console.apify.com/account/integrations) → `APIFY_API_TOKEN`
 
 ## Step 1 — Push latest code
@@ -44,6 +44,15 @@ Important:
 - Do not use `.env` syntax (`KEY=value` without quotes) in the Secrets box.
 
 Save and **Reboot app** if it was already running. If keys are missing, the app shows a configuration error instead of crashing.
+
+### Gemini `ClientError` after upload
+
+If resume upload fails with `google.genai.errors.ClientError`:
+
+1. Regenerate the key at [Google AI Studio](https://aistudio.google.com/apikey) and update Secrets.
+2. Prefer an **`AIza...`** key. Some accounts only get **`AQ....`** keys; those usually work, but if errors persist create a key in [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → **API key**.
+3. Push the latest code (uses model `gemini-2.0-flash`, not the retired `gemini-2.0-flash-001`).
+4. Check **Manage app → Logs** for the full error code (e.g. `401` = invalid key, `429` = quota).
 
 ## Step 4 — Share on your portfolio
 

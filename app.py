@@ -29,17 +29,33 @@ if not get_api_key("GOOGLE_API_KEY") or not get_api_key("APIFY_API_TOKEN"):
 uploaded_file = st.file_uploader("Upload your resume", type=["pdf"])
 
 if uploaded_file:
-    with st.spinner("Extracting text from your resume..."):
-        resume_text = extract_text_from_pdf(uploaded_file)
+    try:
+        with st.spinner("Extracting text from your resume..."):
+            resume_text = extract_text_from_pdf(uploaded_file)
+            if not resume_text.strip():
+                st.error("Could not read text from this PDF. Try another file or a text-based PDF.")
+                st.stop()
 
-    with st.spinner("Summarizing your resume..."):
-        summary = ask_genai(f"Summarize this resume highlighting the skills, education, and experience: \n\n{resume_text}", max_tokens=500)
-    
-    with st.spinner("Finding skill Gaps..."):
-        gaps = ask_genai(f"Analyze this resume and highlight missing skills, certification, and experiences needed for better job opportunities: \n\n{resume_text}", max_tokens=500)
+        with st.spinner("Summarizing your resume..."):
+            summary = ask_genai(
+                f"Summarize this resume highlighting the skills, education, and experience: \n\n{resume_text}",
+                max_tokens=500,
+            )
 
-    with st.spinner("Creating Future Roadmap..."):
-        roadmap = ask_genai(f"Based on this resume, suggest a future roadmap to improve this person's career prospects (Skill to learn, certification needed, industry exposure) \n\n{resume_text}", max_tokens=500)
+        with st.spinner("Finding skill Gaps..."):
+            gaps = ask_genai(
+                f"Analyze this resume and highlight missing skills, certification, and experiences needed for better job opportunities: \n\n{resume_text}",
+                max_tokens=500,
+            )
+
+        with st.spinner("Creating Future Roadmap..."):
+            roadmap = ask_genai(
+                f"Based on this resume, suggest a future roadmap to improve this person's career prospects (Skill to learn, certification needed, industry exposure) \n\n{resume_text}",
+                max_tokens=500,
+            )
+    except RuntimeError as exc:
+        st.error(str(exc))
+        st.stop()
 
     st.markdown("---")
     st.header("📑 Resume Summary")
@@ -56,19 +72,23 @@ if uploaded_file:
     st.success("✅ Analysis Completed Successfully!")
 
     if st.button("🔎 Get Job Recomendations"):
-        with st.spinner("Fetching job recommendations..."):
-            keywords = ask_genai(
-                f"Based on this resume summary, suggest the best job titles and keywords for searching jobs: Give a comma-seperated list only, no explanation.\n\nSummary: {summary}",
-                max_tokens=100
-            )
-            
-            search_keywords_clean = keywords.replace("\n", "".strip())
+        try:
+            with st.spinner("Fetching job recommendations..."):
+                keywords = ask_genai(
+                    f"Based on this resume summary, suggest the best job titles and keywords for searching jobs: Give a comma-seperated list only, no explanation.\n\nSummary: {summary}",
+                    max_tokens=100,
+                )
 
-        st.success(f"Extracted Job Keywords: {search_keywords_clean}")
+                search_keywords_clean = keywords.replace("\n", "").strip()
 
-        with st.spinner("Fetching job from LinkedIn and Naukri..."):
-            linkedin_jobs = fetch_linkedin_jobs(search_keywords_clean, rows=60)
-            naukri_jobs = fetch_naukri_jobs(search_keywords_clean, rows=60)
+            st.success(f"Extracted Job Keywords: {search_keywords_clean}")
+
+            with st.spinner("Fetching job from LinkedIn and Naukri..."):
+                linkedin_jobs = fetch_linkedin_jobs(search_keywords_clean, rows=60)
+                naukri_jobs = fetch_naukri_jobs(search_keywords_clean, rows=60)
+        except RuntimeError as exc:
+            st.error(str(exc))
+            st.stop()
 
 
         st.markdown("---")
